@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BlueSky | Academic Café & Archive</title>
+    <style>
+        :root { 
+            --deep-coffee: #3e2723; --latte-brown: #d7ccc8; --red-brown: #7a3a3a; 
+            --gold: #f1c40f; --bloom-pink: #f8bbd0; --sidebar-width: 280px; 
+        }
+        
+        body { 
+            font-family: 'Segoe UI', sans-serif; margin: 0; display: flex; 
+            color: var(--deep-coffee); min-height: 100vh;
+            background: linear-gradient(rgba(0,0,0,0.7), rgba(0,0,0,0.7)), 
+                        url('https://images.unsplash.com/photo-1554118811-1e0d58224f24?auto=format&fit=crop&q=80&w=2000'); 
+            background-size: cover; background-attachment: fixed; overflow: hidden;
+        }
+        
+        /* SIDEBAR */
+        nav.sidebar { 
+            width: var(--sidebar-width); height: 100vh; 
+            background: rgba(30, 18, 17, 0.98); 
+            color: #efebe9; position: fixed; padding: 20px; box-sizing: border-box; 
+            border-right: 4px solid var(--red-brown); display: flex; flex-direction: column; z-index: 1000;
+            backdrop-filter: blur(15px);
+        }
+        
+        .logo-area { text-align: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
+        .logo-area h2 { color: var(--bloom-pink); margin: 0; font-family: 'Georgia', serif; }
+        
+        .nav-links { list-style: none; padding: 0; flex-grow: 1; overflow-y: auto; margin: 10px 0; }
+        .nav-links li { padding: 8px 15px; cursor: pointer; border-radius: 20px; margin-bottom: 3px; font-size: 0.8rem; transition: 0.3s; color: #d7ccc8; }
+        .nav-links li:hover, .nav-links li.active { background: var(--red-brown); color: white; }
+
+        .user-card { background: rgba(248, 187, 208, 0.08); padding: 12px; border-radius: 15px; text-align: center; border: 1px solid rgba(248, 187, 208, 0.3); margin-bottom: 10px; }
+        .sub-badge { font-size: 0.6rem; padding: 3px 10px; border-radius: 10px; font-weight: bold; margin-top: 5px; display: inline-block; }
+
+        /* MAIN */
+        main { margin-left: var(--sidebar-width); flex: 1; padding: 40px; height: 100vh; overflow-y: auto; }
+        .shelf-container { background: rgba(255, 255, 255, 0.05); backdrop-filter: blur(8px); padding: 30px; border-radius: 20px; border: 1px solid rgba(255,255,255,0.1); }
+        .shelf-title { font-size: 1.5rem; color: #fff; border-bottom: 2px solid var(--bloom-pink); padding-bottom: 10px; margin-bottom: 25px; font-family: 'Georgia', serif; }
+        .book-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 20px; }
+        
+        .book-card { width: 140px; cursor: pointer; transition: 0.4s; position: relative; }
+        .book-card:hover { transform: translateY(-5px); }
+        .book-cover { width: 100%; height: 190px; background: #222; border-radius: 8px; box-shadow: 0 8px 20px rgba(0,0,0,0.5); overflow: hidden; }
+        .book-cover img { width: 100%; height: 100%; object-fit: cover; }
+        .book-info { color: #fce4ec; font-size: 0.75rem; margin-top: 8px; text-align: center; font-weight: bold; }
+
+        /* MODALS */
+        .modal { position: fixed; top:0; left:0; width:100%; height:100%; background: rgba(0,0,0,0.95); display: none; z-index: 5000; align-items: center; justify-content: center; }
+        .modal-box { background: #fffafa; padding: 25px; border-radius: 20px; width: 400px; max-height: 90vh; overflow-y: auto; border: 4px solid var(--latte-brown); color: var(--deep-coffee); }
+        input, select { width: 100%; padding: 10px; margin: 8px 0; border-radius: 8px; border: 1px solid #ccc; font-family: inherit; }
+        .btn-coffee { background: var(--red-brown); color: white; padding: 12px; border: none; border-radius: 30px; cursor: pointer; width: 100%; font-weight: bold; transition: 0.2s; }
+        .btn-coffee:active { transform: scale(0.98); }
+        
+        .ledger-box { background: #1b5e20; color: white; padding: 15px; border-radius: 12px; text-align: center; margin-bottom: 15px; }
+
+        /* READER */
+        #ebook-reader { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: #1a1a1a; z-index: 10000; display: none; flex-direction: column; }
+        #reader-frame { width: 100%; height: 100%; border: none; }
+    </style>
+</head>
+<body>
+
+<nav class="sidebar">
+    <div class="logo-area">
+        <h2>BlueSky</h2>
+        <small style="color:var(--gold); font-size:0.55rem; letter-spacing:2px;">ACADEMIC REPOSITORY</small>
+    </div>
+
+    <div class="user-card">
+        <div id="u-name" style="color:white; font-size: 0.9rem;">Guest Reader</div>
+        <div id="u-sub" class="sub-badge" style="background:#777; color:white;">No Access</div>
+        <button onclick="openModal('login-modal')" id="login-btn" style="background:none; border:none; color:var(--bloom-pink); cursor:pointer; font-size:0.7rem; text-decoration:underline; display:block; margin: 5px auto;">Sign In</button>
+        <button onclick="openModal('sub-modal')" id="sub-btn" style="display:none; margin-top:8px;" class="btn-coffee">Unlock All ₱50</button>
+    </div>
+
+    <ul class="nav-links">
+        <li class="active" onclick="setView('all')">📚 All Collections</li>
+        <li onclick="setView('stem')">🧪 STEM</li>
+        <li onclick="setView('health')">🏥 Nursing & Health</li>
+        <li onclick="setView('education')">🍎 Education</li>
+        <li onclick="setView('business')">💼 Business & Accountancy</li>
+        <li onclick="setView('social')">⚖️ Social Science & Law</li>
+        <li onclick="setView('arts')">🎨 Arts & Humanities</li>
+        <li onclick="setView('novel')" style="color:var(--gold)">📖 BlueNovel Premium</li>
+        <li onclick="setView('free')">🌿 Free Archive</li>
+    </ul>
+
+    <div style="background:rgba(0,0,0,0.4); padding:10px; border-radius:12px; margin-top: auto;">
+        <audio id="player" controls style="width:100%; height:25px;"></audio>
+        <input type="text" id="m-search" placeholder="Search Music..." onkeyup="searchMusic()" style="width:100%; border:none; background:transparent; color:white; font-size:0.7rem; margin-top:5px;">
+        <div id="m-results" style="font-size:0.6rem; color:var(--gold); max-height:40px; overflow:auto;"></div>
+    </div>
+
+    <button onclick="openModal('admin-check')" style="margin-top:10px; background:transparent; border:1px solid var(--bloom-pink); color:var(--bloom-pink); padding:5px; border-radius:20px; font-size:0.6rem; cursor:pointer;">ADMIN PANEL</button>
+</nav>
+
+<main>
+    <div class="shelf-container">
+        <div id="shelf-label" class="shelf-title">Library Lounge</div>
+        <div id="shelf" class="book-grid"></div>
+    </div>
+</main>
+
+<div id="ebook-reader">
+    <div style="background:var(--deep-coffee); color:white; padding:10px; display:flex; justify-content:space-between; align-items:center;">
+        <button onclick="closeReader()" style="background:none; border:1px solid white; color:white; padding:5px 15px; border-radius:20px; cursor:pointer;">← Return to Lounge</button>
+        <div id="rtitle" style="font-weight:bold; font-size:0.9rem;">Reading Mode</div>
+        <div style="width:100px;"></div>
+    </div>
+    <iframe id="reader-frame"></iframe>
+</div>
+
+<div id="admin-check" class="modal"><div class="modal-box" style="width:250px;">
+    <h3>Admin Login</h3>
+    <input type="password" id="a-pass" placeholder="Enter Access Code">
+    <button class="btn-coffee" onclick="checkAdmin()">Access Lobby</button>
+</div></div>
+
+<div id="admin-lobby" class="modal"><div class="modal-box">
+    <div class="ledger-box">
+        <small>VAULT BALANCE</small>
+        <h2 id="rev-total">₱ 0.00</h2>
+        <div style="display:flex; gap:5px;">
+            <input type="number" id="w-amt" placeholder="₱ Amount" style="height:35px;">
+            <button onclick="doWithdraw()" style="background:white; color:#1b5e20; border:none; padding:0 10px; border-radius:8px; font-weight:bold; cursor:pointer;">Withdraw</button>
+        </div>
+    </div>
+
+    <h4>Publish Content</h4>
+    <select id="u-cat">
+        <option value="stem">STEM</option><option value="health">Health</option>
+        <option value="education">Education</option><option value="business">Business</option>
+        <option value="social">Social Science</option><option value="arts">Arts</option>
+        <option value="novel">BlueNovel</option><option value="free">Free</option>
+    </select>
+    <input type="text" id="u-title" placeholder="Book Title">
+    <label style="font-size:0.7rem;">Cover Art</label><input type="file" id="u-img" accept="image/*">
+    <label style="font-size:0.7rem;">PDF Document (Infinite Size)</label><input type="file" id="u-pdf" accept="application/pdf">
+    <button class="btn-coffee" id="pub-btn" onclick="doPublish()">🚀 Publish ASAP</button>
+
+    <h4 style="margin-top:20px;">Music Upload</h4>
+    <input type="text" id="mt" placeholder="Song Title">
+    <input type="file" id="mp" accept="audio/mpeg">
+    <button class="btn-coffee" style="background:var(--deep-coffee);" id="mus-btn" onclick="doMusic()">Save Song</button>
+
+    <button onclick="closeModal('admin-lobby')" style="width:100%; border:none; background:none; margin-top:20px; color:#777; cursor:pointer;">Close Admin</button>
+</div></div>
+
+<div id="login-modal" class="modal"><div class="modal-box" style="width:300px;">
+    <h3>Scholar Sign In</h3>
+    <input type="text" id="r-name" placeholder="Full Name">
+    <button class="btn-coffee" onclick="readerIn()">Enter</button>
+</div></div>
+
+<div id="sub-modal" class="modal">
+    <div class="modal-box" style="text-align:center;">
+        <h2 style="color:var(--red-brown); margin-top:0;">Premium Access</h2>
+        <div style="background:#f1f8e9; padding:15px; border-radius:10px; margin-bottom:15px;">
+            <h1 style="color:#2e7d32; margin:0;">₱ 50.00</h1>
+            <small>30 Days Full Major Access</small>
+        </div>
+        <p style="font-size:0.8rem; color:#666; margin-bottom:20px;">Secure payment via GCash or Maya</p>
+        
+        <div style="display:grid; grid-template-columns: 1fr 1fr; gap:10px; margin-bottom:15px;">
+            <button class="btn-coffee" style="background:#007dfe;" onclick="processEPayment('GCash')">GCash</button>
+            <button class="btn-coffee" style="background:#6533ff;" onclick="processEPayment('Maya')">Maya</button>
+        </div>
+        <button onclick="closeModal('sub-modal')" style="background:none; border:none; color:#999; cursor:pointer;">Later</button>
+    </div>
+</div>
+
+<script>
+    let db;
+    const request = indexedDB.open("BlueSky_Ultimate_V1", 1);
+    request.onupgradeneeded = e => {
+        db = e.target.result;
+        db.createObjectStore("books", { keyPath: "id", autoIncrement: true });
+        db.createObjectStore("music", { keyPath: "id", autoIncrement: true });
+    };
+    request.onsuccess = e => { db = e.target.result; render(); };
+
+    let user = JSON.parse(localStorage.getItem('bs_u')) || null;
+    let rev = parseFloat(localStorage.getItem('bs_r')) || 0;
+    let wdn = parseFloat(localStorage.getItem('bs_w')) || 0;
+
+    function openModal(id) { document.getElementById(id).style.display = 'flex'; }
+    function closeModal(id) { document.getElementById(id).style.display = 'none'; }
+
+    // --- ADMIN & WITHDRAWAL ---
+    function checkAdmin() {
+        if(document.getElementById('a-pass').value === "080803") {
+            closeModal('admin-check');
+            refreshAdminStats();
+            openModal('admin-lobby');
+        } else { alert("Invalid Code"); }
+    }
+
+    function refreshAdminStats() {
+        document.getElementById('rev-total').innerText = "₱ " + (rev - wdn).toLocaleString();
+    }
+
+    function doWithdraw() {
+        let amt = parseFloat(document.getElementById('w-amt').value);
+        if(amt > 0 && amt <= (rev - wdn)) {
+            wdn += amt;
+            localStorage.setItem('bs_w', wdn);
+            refreshAdminStats();
+            alert("Withdrawal Successful");
+        } else { alert("Check balance or amount."); }
+    }
+
+    // --- CONTENT PUBLISHING ---
+    async function doPublish() {
+        const p = document.getElementById('u-pdf').files[0], i = document.getElementById('u-img').files[0];
+        const t = document.getElementById('u-title').value, c = document.getElementById('u-cat').value;
+        if(!p || !t) return alert("PDF and Title required");
+        const btn = document.getElementById('pub-btn');
+        btn.disabled = true; btn.innerText = "⚡ Uploading...";
+        const tx = db.transaction("books", "readwrite");
+        tx.objectStore("books").add({ title: t, cat: c, pdf: p, cover: i, premium: (c !== 'free') });
+        tx.oncomplete = () => { btn.disabled = false; btn.innerText = "🚀 Publish ASAP"; closeModal('admin-lobby'); render(); };
+    }
+
+    function doMusic() {
+        const f = document.getElementById('mp').files[0], t = document.getElementById('mt').value;
+        if(!f || !t) return alert("Provide file and title.");
+        const btn = document.getElementById('mus-btn');
+        btn.disabled = true; btn.innerText = "⚡ Saving...";
+        const tx = db.transaction("music", "readwrite");
+        tx.objectStore("music").add({ title: t, file: f });
+        tx.oncomplete = () => { btn.disabled = false; btn.innerText = "Save Song"; alert("Music Added!"); };
+    }
+
+    // --- E-PAYMENT INTEGRATION ---
+    function generateRef() {
+        return 'BS-' + Math.random().toString(36).substr(2, 9).toUpperCase();
+    }
+
+    function processEPayment(gateway) {
+        if(!user) return openModal('login-modal');
+        const refNum = generateRef();
+        
+        const confirmed = confirm(`Proceeding to ${gateway}...\n\nAmount: ₱50.00\nRef: ${refNum}\n\nDo you want to authorize payment?`);
+        
+        if(confirmed) {
+            // Simulate Payment Processing
+            const btn = event.target;
+            const originalText = btn.innerText;
+            btn.innerText = "Processing...";
+            btn.disabled = true;
+
+            setTimeout(() => {
+                let now = Date.now();
+                let baseTime = (user.expiry > now) ? user.expiry : now;
+                user.expiry = baseTime + (30 * 24 * 60 * 60 * 1000);
+                
+                rev += 50;
+                localStorage.setItem('bs_r', rev);
+                localStorage.setItem('bs_u', JSON.stringify(user));
+                
+                updateUI();
+                closeModal('sub-modal');
+                alert(`Payment Success via ${gateway}!\nReference: ${refNum}\nPremium access unlocked for 30 days.`);
+                btn.innerText = originalText;
+                btn.disabled = false;
+            }, 2000);
+        }
+    }
+
+    // --- CORE APP LOGIC ---
+    function render(filter = 'all') {
+        const shelf = document.getElementById('shelf'); shelf.innerHTML = "";
+        const tx = db.transaction("books", "readonly");
+        tx.objectStore("books").openCursor().onsuccess = e => {
+            const cursor = e.target.result;
+            if(cursor) {
+                const b = cursor.value;
+                if(filter === 'all' || b.cat === filter) {
+                    const card = document.createElement('div'); card.className = "book-card";
+                    const coverURL = b.cover ? URL.createObjectURL(b.cover) : "";
+                    card.innerHTML = `<div class="book-cover">${coverURL ? `<img src="${coverURL}">` : `<div style="padding:20px;color:#555;text-align:center;">${b.title}</div>`}</div>
+                                      <div class="book-info">${b.title}</div>
+                                      ${b.premium ? '<span style="position:absolute;top:5px;right:5px;background:var(--gold);font-size:0.5rem;padding:2px 5px;border-radius:5px;color:black;font-weight:bold;">PREMIUM</span>':''}`;
+                    card.onclick = () => {
+                        if(b.premium && (!user || user.expiry < Date.now())) return openModal('sub-modal');
+                        document.getElementById('rtitle').innerText = b.title;
+                        document.getElementById('reader-frame').src = URL.createObjectURL(b.pdf);
+                        document.getElementById('ebook-reader').style.display = 'flex';
+                    };
+                    shelf.appendChild(card);
+                }
+                cursor.continue();
+            }
+        };
+    }
+
+    function searchMusic() {
+        let q = document.getElementById('m-search').value.toLowerCase();
+        let r = document.getElementById('m-results'); r.innerHTML = "";
+        if(!q) return;
+        const tx = db.transaction("music", "readonly");
+        tx.objectStore("music").openCursor().onsuccess = e => {
+            const cursor = e.target.result;
+            if(cursor) {
+                if(cursor.value.title.toLowerCase().includes(q)) {
+                    let d = document.createElement('div'); d.innerText = "🎵 " + cursor.value.title; d.style.cursor="pointer";
+                    d.onclick = () => { let p = document.getElementById('player'); p.src = URL.createObjectURL(cursor.value.file); p.play(); };
+                    r.appendChild(d);
+                }
+                cursor.continue();
+            }
+        };
+    }
+
+    function readerIn() {
+        let n = document.getElementById('r-name').value;
+        if(n) { 
+            user = { name: n, expiry: user ? user.expiry : 0 }; 
+            localStorage.setItem('bs_u', JSON.stringify(user)); 
+            updateUI(); closeModal('login-modal'); 
+        }
+    }
+
+    function updateUI() {
+        if(!user) return;
+        document.getElementById('u-name').innerText = user.name;
+        document.getElementById('login-btn').style.display = 'none';
+        let s = document.getElementById('u-sub'), b = document.getElementById('sub-btn');
+        if(user.expiry > Date.now()) { s.innerText = "PREMIUM ACTIVE"; s.style.background = "#2e7d32"; b.style.display = "none"; }
+        else { s.innerText = "ACCESS EXPIRED"; s.style.background = "var(--red-brown)"; b.style.display = "block"; }
+    }
+
+    function closeReader() { document.getElementById('ebook-reader').style.display = 'none'; document.getElementById('reader-frame').src = ""; }
+    function setView(c) { document.querySelectorAll('.nav-links li').forEach(l => l.classList.remove('active')); event.currentTarget.classList.add('active'); render(c); }
+
+    updateUI();
+</script>
+</body>
+</html>
